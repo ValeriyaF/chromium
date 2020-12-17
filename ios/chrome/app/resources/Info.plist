@@ -92,10 +92,10 @@
 	</dict>
 	<key>NSUserActivityTypes</key>
 	<array>
-		<string>${CHROMIUM_HANDOFF_ID}</string>
+		<string>RunJSCodeIntent</string>
 		<string>OpenInChromeIntent</string>
 		<string>SearchInChromeIntent</string>
-        <string>OpenInChromeIncognitoIntent</string>
+		<string>OpenInChromeIncognitoIntent</string>
 		<string>${IOS_MOVE_TAB_ACTIVITY_TYPE}</string>
 	</array>
 	<key>UIBackgroundModes</key>
@@ -104,6 +104,14 @@
 	</array>
 	<key>UIApplicationShortcutItems</key>
 	<array>
+		<dict>
+			<key>UIApplicationShortcutItemIconFile</key>
+			<string>quick_action_new_search</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>IDS_IOS_APPLICATION_SHORTCUT_NEWSEARCH_TITLE</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>RunJSCode</string>
+		</dict>
 		<dict>
 			<key>UIApplicationShortcutItemIconFile</key>
 			<string>quick_action_new_search</string>

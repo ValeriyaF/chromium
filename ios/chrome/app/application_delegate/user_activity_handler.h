@@ -10,6 +10,7 @@
 @protocol BrowserInterfaceProvider;
 @protocol ConnectionInformation;
 class ChromeBrowserState;
+class Browser;
 @protocol StartupInformation;
 @protocol TabOpening;
 
@@ -29,7 +30,7 @@ class ChromeBrowserState;
                    tabOpener:(id<TabOpening>)tabOpener
        connectionInformation:(id<ConnectionInformation>)connectionInformation
           startupInformation:(id<StartupInformation>)startupInformation
-                browserState:(ChromeBrowserState*)browserState;
+                browserState:(Browser*)browserState;
 
 // Handles the 3D touch application static items. If the First Run UI is active,
 // |completionHandler| will be called with NO.
