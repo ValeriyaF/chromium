@@ -8,6 +8,12 @@
 #import <Intents/Intents.h>
 #import <UIKit/UIKit.h>
 
+#include "components/reading_list/core/reading_list_model.h"
+#import "ios/chrome/browser/reading_list/offline_page_tab_helper.h"
+#include "ios/chrome/browser/reading_list/offline_url_utils.h"
+#include "ios/chrome/browser/reading_list/reading_list_model_factory.h"
+#import "ios/chrome/browser/ui/commands/reading_list_add_command.h"
+
 #include "base/ios/block_types.h"
 #include "base/mac/foundation_util.h"
 #include "base/metrics/histogram_macros.h"
@@ -22,6 +28,7 @@
 #import "ios/chrome/app/intents/OpenInChromeIncognitoIntent.h"
 #import "ios/chrome/app/intents/OpenInChromeIntent.h"
 #import "ios/chrome/app/intents/SearchInChromeIntent.h"
+#import "ios/chrome/app/intents/AddToReadingListIntent.h"
 #import "ios/chrome/app/spotlight/actions_spotlight_manager.h"
 #import "ios/chrome/app/spotlight/spotlight_util.h"
 #include "ios/chrome/app/startup/chrome_app_startup_parameters.h"
@@ -57,6 +64,7 @@ NSString* const kShortcutVoiceSearch = @"OpenVoiceSearch";
 NSString* const kShortcutQRScanner = @"OpenQRScanner";
 
 // Constants for Siri shortcut.
+NSString* const kSiriShortcutAddToReadingList = @"AddToReadingListIntent";
 NSString* const kSiriShortcutOpenInChrome = @"OpenInChromeIntent";
 NSString* const kSiriShortcutSearchInChrome = @"SearchInChromeIntent";
 NSString* const kSiriShortcutOpenInIncognito = @"OpenInChromeIncognitoIntent";
@@ -183,11 +191,31 @@ std::vector<GURL> createGURLVectorFromIntentURLs(NSArray<NSURL*>* intentURLs) {
         [NSURL URLWithString:base::SysUTF8ToNSString(kChromeUINewTabURL)];
 
   } else if ([userActivity.activityType
+              isEqualToString:kSiriShortcutAddToReadingList]) {
+      AddToReadingListIntent* intent = base::mac::ObjCCastStrict<AddToReadingListIntent>(
+          userActivity.interaction.intent);
+      if (!intent.url) {
+        return NO;
+      }
+
+      std::vector<GURL> URLs = createGURLVectorFromIntentURLs(@[intent.url]);
+      ReadingListModel* readingModel = ReadingListModelFactory::GetForBrowserState(browserState);
+      readingModel->AddEntry(URLs[0], base::SysNSStringToUTF8(@"New Item"), reading_list::ADDED_VIA_CURRENT_APP);
+
+      AppStartupParameters* startupParams = [[AppStartupParameters alloc]
+        initWithExternalURL:GURL(kChromeUINewTabURL)
+                completeURL:GURL(kChromeUINewTabURL)];
+
+      startupParams.postOpeningAction = OPEN_READING_LIST;
+      [connectionInformation setStartupParameters:startupParams];
+      webpageURL =
+        [NSURL URLWithString:base::SysUTF8ToNSString(kChromeUINewTabURL)];
+
+  } else if ([userActivity.activityType
                  isEqualToString:kSiriShortcutOpenInChrome]) {
     base::RecordAction(UserMetricsAction("IOSLaunchedByOpenInChromeIntent"));
     OpenInChromeIntent* intent = base::mac::ObjCCastStrict<OpenInChromeIntent>(
         userActivity.interaction.intent);
-
     if (!intent.url || intent.url.count == 0) {
       return NO;
     }

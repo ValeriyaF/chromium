@@ -9,6 +9,7 @@
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/strings/sys_string_conversions.h"
+#include "base/strings/utf_string_conversions.h"
 #include "base/task/post_task.h"
 #include "components/signin/public/identity_manager/identity_manager.h"
 #include "components/url_formatter/url_formatter.h"
@@ -87,6 +88,8 @@
 #include "ios/web/public/thread/web_task_traits.h"
 #import "ios/web/public/web_state.h"
 #import "net/base/mac/url_conversions.h"
+
+@class ReadingListAddCommand;
 
 #if !defined(__has_feature) || !__has_feature(objc_arc)
 #error "This file requires ARC support."
@@ -1410,6 +1413,13 @@ const char kMultiWindowOpenInNewWindowHistogram[] =
             QRScannerCommands);
         [QRHandler showQRScanner];
       };
+    case OPEN_READING_LIST:
+     return ^{
+       id<BrowserCommands> handler = HandlerForProtocol(
+           self.currentInterface.browser->GetCommandDispatcher(),
+           BrowserCommands);
+           [handler showReadingList];
+     };
     case FOCUS_OMNIBOX:
       return ^{
         id<OmniboxCommands> focusHandler = HandlerForProtocol(

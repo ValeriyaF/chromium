@@ -10,5 +10,6 @@ intent_definition("intents") {
     "OpenInChromeIntent",
     "OpenInChromeIncognitoIntent",
     "SearchInChromeIntent",
+    "AddToReadingListIntent"
   ]
 }
