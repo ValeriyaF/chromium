@@ -347,7 +347,7 @@
       connectionInformation:self.sceneController
          startupInformation:_startupInformation
                browserState:_mainController.interfaceProvider.currentInterface
-                                .browserState];
+                                .browser];
 }
 
 - (void)application:(UIApplication*)application

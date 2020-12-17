@@ -420,7 +420,7 @@ const char kMultiWindowOpenInNewWindowHistogram[] =
                         tabOpener:self
             connectionInformation:self
                startupInformation:self.mainController
-                     browserState:self.currentInterface.browserState];
+                     browserState:self.currentInterface.browser];
       }
       self.sceneState.connectionOptions = nil;
     }
@@ -495,7 +495,8 @@ const char kMultiWindowOpenInNewWindowHistogram[] =
                                   tabOpener:self
                       connectionInformation:self
                          startupInformation:self.mainController
-                               browserState:self.currentInterface.browserState];
+                               browserState:self.currentInterface.browser];
+
   // It is necessary to reset the pendingUserActivity after handling it.
   // Handle the reset asynchronously to avoid interfering with other
   // observers.

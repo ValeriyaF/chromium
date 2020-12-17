@@ -8,6 +8,8 @@
 #import <Intents/Intents.h>
 #import <UIKit/UIKit.h>
 
+#include "base/strings/utf_string_conversions.h"
+
 #include "base/ios/block_types.h"
 #include "base/mac/foundation_util.h"
 #include "base/metrics/histogram_macros.h"
@@ -22,6 +24,7 @@
 #import "ios/chrome/app/intents/OpenInChromeIncognitoIntent.h"
 #import "ios/chrome/app/intents/OpenInChromeIntent.h"
 #import "ios/chrome/app/intents/SearchInChromeIntent.h"
+#import "ios/chrome/app/intents/GetDetailsIntent.h"
 #import "ios/chrome/app/spotlight/actions_spotlight_manager.h"
 #import "ios/chrome/app/spotlight/spotlight_util.h"
 #include "ios/chrome/app/startup/chrome_app_startup_parameters.h"
@@ -57,6 +60,7 @@ NSString* const kShortcutVoiceSearch = @"OpenVoiceSearch";
 NSString* const kShortcutQRScanner = @"OpenQRScanner";
 
 // Constants for Siri shortcut.
+NSString* const kSiriShortcutGetDetails = @"GetDetailsIntent";
 NSString* const kSiriShortcutOpenInChrome = @"OpenInChromeIntent";
 NSString* const kSiriShortcutSearchInChrome = @"SearchInChromeIntent";
 NSString* const kSiriShortcutOpenInIncognito = @"OpenInChromeIncognitoIntent";
@@ -90,7 +94,7 @@ std::vector<GURL> createGURLVectorFromIntentURLs(NSArray<NSURL*>* intentURLs) {
                    tabOpener:(id<TabOpening>)tabOpener
        connectionInformation:(id<ConnectionInformation>)connectionInformation
           startupInformation:(id<StartupInformation>)startupInformation
-                browserState:(ChromeBrowserState*)browserState {
+                browserState:(Browser*)browserState {
   NSURL* webpageURL = userActivity.webpageURL;
 
   if ([userActivity.activityType
@@ -153,7 +157,7 @@ std::vector<GURL> createGURLVectorFromIntentURLs(NSArray<NSURL*>* intentURLs) {
                               tabOpener:tabOpener
                   connectionInformation:connectionInformation
                      startupInformation:startupInformation
-                           browserState:browserState];
+                           browserState:browserState->GetBrowserState()];
         });
       });
       return YES;
@@ -181,13 +185,42 @@ std::vector<GURL> createGURLVectorFromIntentURLs(NSArray<NSURL*>* intentURLs) {
     [connectionInformation setStartupParameters:startupParams];
     webpageURL =
         [NSURL URLWithString:base::SysUTF8ToNSString(kChromeUINewTabURL)];
-
+  } else if ([userActivity.activityType
+              isEqualToString:kSiriShortcutGetDetails]) {
+      if (browserState->GetWebStateList()->GetActiveWebState() == nil) {
+          return NO;
+      }
+      
+      GetDetailsIntent* intent = base::mac::ObjCCastStrict<GetDetailsIntent>(
+          userActivity.interaction.intent);
+      NSString *putToClipboard = @"el = document.createElement('textarea'); el.value = str; el.setAttribute('readonly', ''); el.style.position = 'absolute'; el.style.left = '-9999px'; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);";
+      switch (intent.code) {
+          case EnumTitle: {
+              NSString *jsCode = [@"str = document.title;" stringByAppendingString:putToClipboard];
+              browserState->GetWebStateList()->GetActiveWebState()->ExecuteJavaScript(base::UTF8ToUTF16([jsCode UTF8String]));
+              break;
+          }
+          case EnumText: {
+              NSString *jsCode = [@"str = document.body.textContent;" stringByAppendingString:putToClipboard];
+              browserState->GetWebStateList()->GetActiveWebState()->ExecuteJavaScript(base::UTF8ToUTF16([jsCode UTF8String]));
+              break;
+          }
+          case EnumNumberOfWords: {
+              NSString *jsCode = [@"str = document.body.textContent; str = str.replace(/(^\\s*)|(\\s*$)/gi,"");str = str.replace(/[ ]{2,}/gi," ");str = str.split(' ').length;" stringByAppendingString:putToClipboard];
+              browserState->GetWebStateList()->GetActiveWebState()->ExecuteJavaScript(base::UTF8ToUTF16([jsCode UTF8String]));
+              break;
+          }
+          case EnumUnknown: {
+              break;
+          }
+          default:
+              break;
+      }
   } else if ([userActivity.activityType
                  isEqualToString:kSiriShortcutOpenInChrome]) {
     base::RecordAction(UserMetricsAction("IOSLaunchedByOpenInChromeIntent"));
     OpenInChromeIntent* intent = base::mac::ObjCCastStrict<OpenInChromeIntent>(
         userActivity.interaction.intent);
-
     if (!intent.url || intent.url.count == 0) {
       return NO;
     }
@@ -239,7 +272,8 @@ std::vector<GURL> createGURLVectorFromIntentURLs(NSArray<NSURL*>* intentURLs) {
                              tabOpener:tabOpener
                  connectionInformation:connectionInformation
                     startupInformation:startupInformation
-                          browserState:browserState];
+                          browserState:browserState->GetBrowserState()];
+
 }
 
 + (BOOL)continueUserActivityURL:(NSURL*)webpageURL
